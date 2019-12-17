@@ -1,4 +1,4 @@
-package com.jvs.gd;
+package com.jvs.gd.baseusTest;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
