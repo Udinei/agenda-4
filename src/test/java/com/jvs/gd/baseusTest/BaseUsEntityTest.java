@@ -26,7 +26,7 @@ public class BaseUsEntityTest {
 
 	private Object objeto = null; // classe que sera validada
 	private String pkgSpring = "@org.springframework.data.annotation."; //nome do pacote basico para as annotations do springframework
-	private boolean testaSuperClass;
+	protected boolean testaSuperClass;
 
 	// lista de atributos projetados
 	protected List<String> at = new ArrayList<>(); // atributos da  entity

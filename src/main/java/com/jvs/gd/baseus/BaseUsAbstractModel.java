@@ -7,7 +7,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 
 
-
+/** Essa classe fara a auditoria das classes que herdarem ela, registrando sua data de criação e 
+  * alteração */
 public abstract class BaseUsAbstractModel {
 
     @Id
