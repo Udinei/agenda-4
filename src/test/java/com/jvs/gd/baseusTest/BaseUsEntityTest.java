@@ -10,10 +10,15 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.data.mongodb.core.aggregation.StringOperators.IndexOfBytes.SubstringBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.SerializationUtils;
+
+import com.jvs.gd.Agenda4Application;
 
 /**
   Essa classe valida nas entidades e na superclasse abstractModel a existencia de elementos
@@ -24,41 +29,43 @@ import org.springframework.util.SerializationUtils;
 
 public class BaseUsEntityTest {
 
+	@Autowired
+	private ApplicationContext applicationContext;
+
 	private Object objeto = null; // classe que sera validada
-	private String pkgSpring = "@org.springframework.data.annotation."; //nome do pacote basico para as annotations do springframework
 	protected boolean testaSuperClass;
+	AnnotationUtils utils;
 
 	// lista de atributos projetados
-	protected List<String> at = new ArrayList<>(); // atributos da  entity
-	protected List<String> atSam = new ArrayList<>(); // atributos da super class
-	protected List<String> annot = new ArrayList<>(); // anotation da supper class
+	protected List<String> atE = new ArrayList<>(); // atributos da  entity
+	protected List<String> atS = new ArrayList<>(); // atributos da super class
+
+	protected Class<Agenda4Application> auditoriHabilitada;
 
 	public BaseUsEntityTest(Object objeto) {
 		super();
 		this.objeto = objeto;
 	}
 
-	/** Esse metodo testa se a classe entidade esta implementada com os atributos basicos projetados e as 
+	/** Esse metodo testa se a classe entidade esta implementada com os atributos basicos projetados  
 	 *  e os metodos do lombok */
+	@SuppressWarnings("unchecked")
 	@Test
 	public void TestaImplementacaoEntity() {
 
-		if (testaSuperClass) {
+		assertTrue(!atE.isEmpty());// Teste não passa se a lista de Atributos Projetados estiver vazia
+		List<String> listAtributosProjetados = atE;
 
-			assertTrue(!at.isEmpty());// Teste não passa se a lista de Atributos Projetados estiver vazia
-			List<String> listAtributosProjetados = at;
+		List<String> listAtributosNaEntity = getListAtributosImplentadosNaEntity(objeto);
 
-			List<String> listAtributosNaEntity = listAtributosImplentadosNaEntity(objeto);
+		boolean atributosImplementados = todosAtributosProjetasdoForamImplementados(listAtributosProjetados,
+				listAtributosNaEntity);
+		assertTrue(atributosImplementados);
 
-			boolean atributosImplementados = todosAtributosProjetasdoForamImplementados(listAtributosProjetados,
-					listAtributosNaEntity);
-			assertTrue(atributosImplementados);
+		boolean possuiMetodosLombok = metodosBasicosPadraoDoLombokImplementadosNaEntity(objeto);
+		assertTrue(possuiMetodosLombok);
 
-			boolean possuiMetodosLombok = metodosBasicosPadraoDoLombokImplementadosNaEntity(objeto);
-			assertTrue(possuiMetodosLombok);
-
-			entityHeSerializavelDeserializavel(objeto);
-		}
+		entityHeSerializavelDeserializavel(objeto);
 
 	}
 
@@ -67,70 +74,30 @@ public class BaseUsEntityTest {
 	@Test
 	public void TestaSuperClasseAbstractModel() {
 
-		assertTrue(!atSam.isEmpty());// A lista de Atributos Projetados Abstrac Model deve estar preenchida
-		List<String> listAtributosProjetados = atSam; // A lista de atributos projetados da superclasse
+		if (testaSuperClass) {
+			assertTrue(!atS.isEmpty());// A lista de Atributos Projetados Abstrac Model deve estar preenchida
+			List<String> listAtributosProjetados = atS; // A lista de atributos projetados da superclasse
 
-		assertTrue(!annot.isEmpty());
-		List<String> ListAnnotationProjetados = annot; // lista de annotation projetados
+			objeto = obtemSuperClasse(objeto);
 
-		objeto = obtemSuperClasseAbstracModel(objeto);
-		List<Field> listAtributosNaEntity = getListAtributoDaClasse((Class) objeto);
+			List<String> listAtributosNaEntity = getListAtributosImplentadosNaSuper((Class) objeto);
 
-		List<String> listAtributosNaEntityFormatados = formataListaDeFields(listAtributosNaEntity);
-
-		boolean atributosImplementados = todosAtributosProjetasdoForamImplementados(listAtributosProjetados,
-				listAtributosNaEntityFormatados);
-		assertTrue(atributosImplementados);
-
-		boolean annotationSuperImplementadas = todosAnnotationDaSuperForamImplementados(annot, listAtributosNaEntity);
-		assertTrue(annotationSuperImplementadas);
-
-	}
-
-	private boolean todosAnnotationDaSuperForamImplementados(List<String> annotsProjetadas,
-			List<Field> listAtributosNaEntity) {
-		List anotacoesDosAtributos = new ArrayList<>();
-
-		for (Field field : listAtributosNaEntity) {
-			anotacoesDosAtributos.addAll(obtemNomeAnotacaoSobreField(field));
+			boolean atributosImplementados = todosAtributosProjetasdoForamImplementados(listAtributosProjetados,
+					listAtributosNaEntity);
+			assertTrue(atributosImplementados);
 
 		}
+	}
 
-		List<String> newList = new ArrayList<>();
+	@Test
+	public void annotationDeAuditoriaPresente() {
+		Annotation[] tmp = utils.getAnnotations(auditoriHabilitada);
 
-		for (int i = 0; i < anotacoesDosAtributos.size(); i++) {
-
-			String annotFiedEntity = (String) anotacoesDosAtributos.get(i);
-
-			for (String annotPrj : annotsProjetadas) {
-				annotPrj = annotPrj.substring(1);
-
-				annotPrj = pkgSpring + annotPrj + "()"; // TODO - alterar em caso de mudanca de pacotes do spring
-
-				if (annotPrj.contains(annotFiedEntity)) {
-					newList.add(annotPrj);
-				}
-				;
+		for (Annotation anot : tmp) {
+			if (anot.toString().contains("EnableMongoAuditing")) {
+				assertTrue(true);
 			}
-
 		}
-
-		return compareList(newList, anotacoesDosAtributos);
-	}
-
-	@SuppressWarnings("unchecked")
-	public static boolean compareList(List ls1, List ls2) {
-		return ls1.containsAll(ls2) && ls1.size() == ls2.size() ? true : false;
-	}
-
-	private List<String> formataListaDeFields(List<Field> listAtributosNaEntity) {
-		List<String> listAtributosNaEntityFormatados = new ArrayList<>();
-
-		for (Field object : listAtributosNaEntity) {
-			listAtributosNaEntityFormatados.add(formataDeclaracaoAtributo(object));
-
-		}
-		return listAtributosNaEntityFormatados;
 	}
 
 	public void entityHeSerializavelDeserializavel(Object objeto) {
@@ -167,20 +134,21 @@ public class BaseUsEntityTest {
 
 	}
 
-	protected List<String> listAtributosImplentadosNaEntity(Object classe) {
+	protected List<String> getListAtributosImplentadosNaEntity(Object classe) {
 		List<String> atributosNaEntidade = new ArrayList<>();
 		boolean temSerialVersionUID = false;
 
-		String modif = "";
-		String modif_static = "";
-		String modif_final = "";
-		String tipoAtributo = "";
-		String nomeAtributo = "";
 		String declaracaoFinal = "";
+		String anotacoesFormatadas = "";
+		String atributoFormatado = "";
 
-		for (Field atributo : getListAtributoDaClasse(classe.getClass())) {
+		for (Field atributo : getListAtributosImplementadosNaSuperClasse(classe.getClass())) {
 
-			declaracaoFinal = formataDeclaracaoAtributo(atributo);
+			anotacoesFormatadas = formataAnotacaoDoAtributo(getAnnotacaoDoAtributo(atributo));
+
+			atributoFormatado = formataDeclaracaoAtributo(atributo);
+
+			declaracaoFinal = anotacoesFormatadas + atributoFormatado;
 
 			if (atributo.toString().contains("serialVersionUID")) {
 				temSerialVersionUID = true;
@@ -197,6 +165,45 @@ public class BaseUsEntityTest {
 		return atributosNaEntidade;
 	}
 
+	protected List<String> getListAtributosImplentadosNaSuper(Object classe) {
+		List<String> atributosNaEntidade = new ArrayList<>();
+
+		String declaracaoFinal = "", anotacoesFormatadas = "", atributoFormatado = "";
+
+		for (Field atributo : getListAtributosImplementadosNaSuperClasse((Class) classe)) {
+
+			anotacoesFormatadas = formataAnotacaoDoAtributo(getAnnotacaoDoAtributo(atributo));
+
+			atributoFormatado = formataDeclaracaoAtributo(atributo);
+
+			declaracaoFinal = anotacoesFormatadas + atributoFormatado;
+
+			atributosNaEntidade.add(declaracaoFinal);
+		}
+
+		return atributosNaEntidade;
+	}
+
+	public String formataAnotacaoDoAtributo(List listAnotacoes) {
+
+		String tmp = "", tmp2 = "", arroba = "", anotacoes = "";
+
+		for (int i = 0; i < listAnotacoes.size(); i++) {
+
+			tmp = listAnotacoes.get(i).toString(); // TODO: Implementar futuramente leitura das opçoes das annotations
+			arroba = tmp.substring(1, 2);
+
+			tmp2 = tmp.substring(1, tmp.lastIndexOf("("));
+
+			tmp2 = tmp2.substring(tmp2.lastIndexOf(".") + 1);
+
+			anotacoes = anotacoes + arroba + tmp2 + " ";
+
+		}
+
+		return anotacoes;
+	}
+
 	// transforma o field com pacote em apenas: O modificador, o tipo e nome exe: private String id
 	private String formataDeclaracaoAtributo(Field atributo) {
 
@@ -207,6 +214,7 @@ public class BaseUsEntityTest {
 		String modif_final;
 		String tipoAtributo;
 		String nomeAtributo;
+
 		if (!atributo.toString().contains("static final")) {
 			String[] vetor_campos = atributo.toString().split(" ");
 			modif = vetor_campos[0];
@@ -233,7 +241,6 @@ public class BaseUsEntityTest {
 
 	protected boolean todosAtributosProjetasdoForamImplementados(List<String> atributosProjetados,
 			List<String> atributosNaEntity) {
-		boolean atributosImplementados = false;
 
 		List<String> newList = new ArrayList<>();
 
@@ -244,6 +251,7 @@ public class BaseUsEntityTest {
 
 			for (String string : atributosProjetados) {
 
+				// coloca na lista, se atributo implementado for igual a dos atributos projetado 
 				if (string.equals(atributoAtual)) {
 					newList.add(atributoAtual);
 				}
@@ -269,7 +277,7 @@ public class BaseUsEntityTest {
 		assertTrue(temMapeamentoBDNaEntidade);
 	}
 
-	public Object obtemSuperClasseAbstracModel(Object objeto) {
+	public Class obtemSuperClasse(Object objeto) {
 
 		Class superClasseAuditoria = objeto.getClass().getSuperclass();
 		return superClasseAuditoria;
@@ -277,7 +285,7 @@ public class BaseUsEntityTest {
 	}
 
 	// retorna lista de abributos da classe
-	private List<Field> getListAtributoDaClasse(Class clazz) {
+	private List<Field> getListAtributosImplementadosNaSuperClasse(Class clazz) {
 
 		List<Field> fields = new ArrayList<Field>();
 		List<Field> listNamefields = new ArrayList<>();
@@ -287,23 +295,6 @@ public class BaseUsEntityTest {
 		for (Field field : fields) {
 			listNamefields.add(field);
 
-		}
-
-		getListAnottationSpringSuperAbstracModel(clazz);
-		return listNamefields;
-
-	}
-
-	// retorna lista de abributos da classe
-	private List<Field> getListAnottationSpringSuperAbstracModel(Class clazz) {
-
-		List<Field> fields = new ArrayList<Field>();
-		List<Field> listNamefields = new ArrayList<>();
-
-		fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
-
-		for (Field field : fields) {
-			listNamefields.add(field);
 		}
 
 		return listNamefields;
@@ -317,10 +308,33 @@ public class BaseUsEntityTest {
 
 		for (Annotation annotation : annotations) {
 			tmp.add(annotation.toString());
-
 		}
 
 		return tmp;
+	}
+
+	@SuppressWarnings("unchecked")
+	public List getAnnotacaoDoAtributo(Field field) {
+		List tmp = new ArrayList<>();
+
+		Annotation[] annotations = field.getDeclaredAnnotations();
+
+		for (Annotation annotation : annotations) {
+			tmp.add(Arrays.asList(annotation.toString()));
+		}
+
+		return tmp;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static boolean compareList(List ls1, List ls2) {
+		return ls1.containsAll(ls2) && ls1.size() == ls2.size() ? true : false;
+	}
+
+	Function<String, String> reverse = s -> new StringBuilder(s).reverse().toString();
+
+	static String reverse1(String original) {
+		return new StringBuilder(original).reverse().toString();
 	}
 
 }
