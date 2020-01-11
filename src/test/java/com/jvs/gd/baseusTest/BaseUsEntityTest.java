@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ public class BaseUsEntityTest {
 	protected List<String> atE = new ArrayList<>(); // atributos da  entity
 	protected List<String> atS = new ArrayList<>(); // atributos da super class
 
-	protected Class<Agenda4Application> auditoriHabilitada;
+	protected Class<Agenda4Application> auditaMongoApp;
 
 	public BaseUsEntityTest(Object objeto) {
 		super();
@@ -90,9 +91,10 @@ public class BaseUsEntityTest {
 	}
 
 	@Test
-	public void annotationDeAuditoriaPresente() {
-		Annotation[] tmp = utils.getAnnotations(auditoriHabilitada);
-
+	public void annotationDeAuditoriaDoMongoPresente() {
+		AnnotatedElement element =auditaMongoApp;
+		Annotation[] tmp = element.getAnnotations();
+				
 		for (Annotation anot : tmp) {
 			if (anot.toString().contains("EnableMongoAuditing")) {
 				assertTrue(true);
@@ -100,6 +102,7 @@ public class BaseUsEntityTest {
 		}
 	}
 
+	
 	public void entityHeSerializavelDeserializavel(Object objeto) {
 		byte[] data = SerializationUtils.serialize(objeto);
 		Object objNew = SerializationUtils.deserialize(data);

@@ -18,8 +18,8 @@ import com.jvs.gd.repository.UsuarioRepository;
 /**
  * Classe de teste de integração da entidade UsuarioRepository. Esse tipo de
  * testes utiliza recursos externos a aplicação no caso o BD postgresql e
- * qualquer outro recurso.</br>
- * 
+ * qualquer outro recurso. Metodos de testes nao possuem retorno.</br>
+ * No caso deste teste sera utilizado o banco Nosql mongoDB
  * @AutoConfigureDataMongo
  * 
  */
@@ -49,7 +49,7 @@ public class UsuarioRepositoryTest extends BaseUsCrudBasicoEntityTest {
 	           Metodos de negocio - UC     
 	   --------------------------------------*/
 
-	/** metodos de testes nao possuem retorno */
+	
 	@Test
 	public void deveVerificarExistenciaDeUmEmail() {
 		// cenario 1 - O usuario existe

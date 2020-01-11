@@ -49,7 +49,7 @@ public class UsuarioEntityTest extends BaseUsEntityTest {
 		atE = atributosProjetadosDaEntity();
 		atS = atributosProjetadosDaSuperAbstractModel();
 		testaSuperClass = true;
-		auditoriHabilitada = Agenda4Application.class;
+		auditaMongoApp = Agenda4Application.class;
 	}
 
 }

@@ -18,17 +18,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.Environment;
 
+import com.jvs.gd.Agenda4Application;
+
 import io.github.bonigarcia.wdm.WebDriverManager;
 
 /**
  * Essa classe testa a arquitetura básica da aplicação: Framework spring MVC Drivers de BD
  *  (deve ter ao menos um instalado H2, etc..). E o ambiente de testes de aceitação com 
- *  Selenium Webdriver.
+ *  Selenium Webdriver. 
+ *  Nota: O teste realizado por essa classe sera feito manualmente inserindo a url no browser
+ *  e verificando se o mesmo retorna a pagina de testes do spring boot
  *
  */
 @SpringBootTest
 public class BaseUsArquiteturaAppTest {
-
+	
 	@Autowired
 	protected Environment environment;
 
@@ -39,8 +43,21 @@ public class BaseUsArquiteturaAppTest {
 
 	@BeforeEach
 	public void openBrowser() {
-		WebDriverManager.chromedriver().setup();
+		
+		//System.setProperty("webdriver.chrome.driver", new File("drivers/chromedriver.exe").getAbsolutePath());
+    	//ChromeOptions options = new ChromeOptions();
+    	//options.addArguments("disabled-popup-blocking");
+    	//options.addArguments("start-maximized");
+	 	//Map<String, Object> prefs = new HashMap<String, Object>();
+    	//prefs.put("credentials_enable_service", false); // desabilita solicitacao para salvar senha
+    	//prefs.put("profile.password_manager_enabled", false); // desabilita uso de profile do usuario
+    	//options.setExperimentalOption("prefs", prefs);
+    	//driver = new ChromeDriver(options);
+		//WebDriverManager.chromedriver().clearCache();
+		WebDriverManager.chromedriver().version("79.0.3945.36").setup();
+		
 		driver = new ChromeDriver();
+    	  	
 		wait = new WebDriverWait(driver, 10);
 		action = new Actions(driver);
 		driver.manage().timeouts().implicitlyWait(60, TimeUnit.SECONDS);
@@ -63,6 +80,7 @@ public class BaseUsArquiteturaAppTest {
 	private String urlDaPaginaDeExecucaoDaApp() {
 		String devUrl = environment.getProperty("environments.dev.url");
 		String serverPort = environment.getProperty("server.porta.teste");
+		System.out.println("porta....." + serverPort);
 		String urlTeste = devUrl.concat(":").concat(serverPort);
 		return urlTeste;
 	}
